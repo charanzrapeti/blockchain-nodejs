@@ -1,39 +1,49 @@
-
 const crypto = require("crypto");
+const { type } = require("os");
 
-// The `generateKeyPairSync` method accepts two arguments:
-// 1. The type ok keys we want, which in this case is "rsa"
-// 2. An object with the properties of the key
-const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
-  // The standard secure default length for RSA keys is 2048 bits
-  modulusLength: 2048,
-});
+const {publicKey, privateKey} = crypto.generateKeyPairSync('rsa',{
+    modulusLength:2048,
+    publicKeyEncoding: {
+        type:'spki',
+        format:'der',
+    },
+    privateKeyEncoding: {
+        type:'pkcs8',
+        format:'der',
+    }
+})
 
-const verifiableData = "this need to be verified";
+// console.log(publicKey.toString('base64'), privateKey.toString('base64'));
 
-// The signature method takes the data we want to sign, the
-// hashing algorithm, and the padding scheme, and generates
-// a signature in the form of bytes
-var signature = crypto.sign("sha256", Buffer.from(verifiableData), {
-  key: privateKey,
-  padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
-});
-signature = signature.toString('base64');
+function signit(message,privateKey) {
+    GeneratedPrivateKey = crypto.createPrivateKey({
+        key:Buffer.from(privateKey,'base64'),
+        type:'pkcs8',
+        format:'der',
+    })
+    const sign = crypto.createSign('SHA256');
+    sign.update(message);
+    sign.end();
+    const signature = sign.sign(GeneratedPrivateKey).toString('base64');
+    return signature;
+
+}
+
+function verifyit(message, publicKey,signature) {
+    GeneratedpublicKey = crypto.createPublicKey({
+        key:Buffer.from(publicKey,'base64'),
+        type:'spki',
+        format:'der',
+    })
+    const verify = crypto.createVerify("SHA256");
+    verify.update(message);
+    verify.end();
+    let result = verify.verify(GeneratedpublicKey,Buffer.from(signature,'base64'));
+    return result;
+}
+
+var signature = signit("helloworld",privateKey);
 console.log(signature);
-console.log(Buffer.from(verifiableData))
-// To verify the data, we provide the same hashing algorithm and
-// padding scheme we provided to generate the signature, along
-// with the signature itself, the data that we want to
-// verify against the signature, and the public key
-const isVerified = crypto.verify(
-  "sha256",
-  Buffer.from(verifiableData),
-  {
-    key: publicKey,
-    padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
-  },
-  Buffer.from(signature,'base64')
-);
-
-// isVerified should be `true` if the signature is valid
-console.log("signature verified: ", isVerified);
+var signature = signit("hellowould",privateKey);
+console.log(signature);
+console.log(verifyit("hellowould",publicKey,signature))

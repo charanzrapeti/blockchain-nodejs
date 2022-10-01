@@ -1,0 +1,4 @@
+sign and verification successfully implemented in temp.js
+should have to implement in blockchain.j, main.js (update it)
+
+should add valid functionality to transaction class 
